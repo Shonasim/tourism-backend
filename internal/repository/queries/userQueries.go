@@ -1,0 +1,17 @@
+package queries
+
+const (
+	CreateUser = `
+INSERT INTO users (name,email,password,role)
+VALUES ($1,$2,$3,$4)
+RETURNING id,created_at`
+	GetUserByEmail = `
+SELECT id, name, email, password, role, created_at 
+FROM users WHERE email = $1`
+	GetAllUsers = `
+SELECT id, name, email, role, created_at FROM users`
+	UpdateUser = `
+UPDATE users SET name = $1, email = $2 where id = $3`
+	DeleteUser = `
+DELETE FROM users WHERE id = $1`
+)
