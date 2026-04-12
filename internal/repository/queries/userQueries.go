@@ -1,5 +1,6 @@
 package queries
 
+// USER
 const (
 	CreateUser = `
 INSERT INTO users (name,email,password,role)
