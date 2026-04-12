@@ -10,11 +10,12 @@ returning id,created_at`
 SELECT * from tours where id = $1`
 	GetAllTours = `
 SELECT * from tours`
-	GetByDestinationID = `ю
-SELECT * from tours where destination_id = $1`
 	UpdateTour = `
-UPDATE tours SET destination_id = $1, name = $2, description = $3, price = $4,start_date = $5,end_date = $6,capacity = $7
-WHERE id = $8`
+UPDATE tours 
+	SET destination_id=$1, name=$2, description=$3,
+		price=$4, start_date=$5, end_date=$6, capacity=$7
+	WHERE id=$8
+	RETURNING created_at`
 	DeleteTour = `
 	DELETE FROM tours WHERE id = $1`
 	GetToursByDestinationID = `

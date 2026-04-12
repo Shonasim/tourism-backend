@@ -15,4 +15,7 @@ SELECT id, name, email, role, created_at FROM users`
 UPDATE users SET name = $1, email = $2 where id = $3`
 	DeleteUser = `
 DELETE FROM users WHERE id = $1`
+	GetUserByID = `
+SELECT id, name, email, role, created_at
+FROM users WHERE id = $1`
 )

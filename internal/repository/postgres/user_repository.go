@@ -60,3 +60,18 @@ func (r *UserRepositoryPostgres) Delete(id int) error {
 	_, err := r.db.Exec(queries.DeleteUser, id)
 	return err
 }
+
+func (r *UserRepositoryPostgres) GetByID(id int) (*domain.User, error) {
+	user := &domain.User{}
+	err := r.db.QueryRow(queries.GetUserByID, id).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Role,
+		&user.CreatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return user, err
+}

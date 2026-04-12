@@ -1,1 +1,89 @@
 package handler
+
+import (
+	"encoding/json"
+	"net/http"
+	"strconv"
+	"tourism-backend/internal/domain"
+	"tourism-backend/internal/service"
+
+	"github.com/go-chi/chi/v5"
+)
+
+type TourHandler struct {
+	service *service.TourService
+}
+
+func NewTourHandler(service *service.TourService) *TourHandler {
+	return &TourHandler{service: service}
+}
+
+func (h *TourHandler) Create(w http.ResponseWriter, r *http.Request) {
+	var tour domain.Tour
+	if err := json.NewDecoder(r.Body).Decode(&tour); err != nil {
+		respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	result, err := h.service.Create(&tour)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondJSON(w, http.StatusCreated, result)
+}
+
+func (h *TourHandler) GetAll(w http.ResponseWriter, r *http.Request) {
+	tours, err := h.service.GetAll()
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondJSON(w, http.StatusOK, tours)
+}
+
+func (h *TourHandler) GetByID(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid id")
+		return
+	}
+	tour, err := h.service.GetByID(id)
+	if err != nil {
+		respondError(w, http.StatusNotFound, err.Error())
+		return
+	}
+	respondJSON(w, http.StatusOK, tour)
+}
+
+func (h *TourHandler) Update(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid id")
+		return
+	}
+	var tour domain.Tour
+	if err := json.NewDecoder(r.Body).Decode(&tour); err != nil {
+		respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	tour.ID = id
+	result, err := h.service.Update(&tour)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondJSON(w, http.StatusOK, result)
+}
+
+func (h *TourHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid id")
+		return
+	}
+	if err := h.service.Delete(id); err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondJSON(w, http.StatusOK, map[string]string{"message": "tour deleted"})
+}

@@ -94,7 +94,7 @@ func (r *TourRepositoryPostgres) GetByDestinationID(destinationID int) ([]*domai
 }
 
 func (r *TourRepositoryPostgres) Update(tour *domain.Tour) error {
-	_, err := r.db.Exec(queries.UpdateTour,
+	return r.db.QueryRow(queries.UpdateTour,
 		tour.DestinationID,
 		tour.Name,
 		tour.Description,
@@ -103,8 +103,7 @@ func (r *TourRepositoryPostgres) Update(tour *domain.Tour) error {
 		tour.EndDate,
 		tour.Capacity,
 		tour.ID,
-	)
-	return err
+	).Scan(&tour.CreatedAt)
 }
 
 func (r *TourRepositoryPostgres) Delete(id int) error {
