@@ -1,18 +1,11 @@
 package handler
 
 import (
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-)
+	middleware "tourism-backend/internal/middlewares"
 
-type Router struct {
-	userHandler        *UserHandler
-	tourHandler        *TourHandler
-	bookingHandler     *BookingHandler
-	paymentHandler     *PaymentHandler
-	reviewHandler      *ReviewHandler
-	destinationHandler *DestinationHandler
-}
+	"github.com/go-chi/chi/v5"
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
+)
 
 func NewRouter(
 	userHandler *UserHandler,
@@ -24,44 +17,52 @@ func NewRouter(
 ) *chi.Mux {
 	r := chi.NewRouter()
 
-	// Middleware
-	r.Use(middleware.Logger)    // логирование запросов
-	r.Use(middleware.Recoverer) // восстановление после panic
+	r.Use(chiMiddleware.Logger)
+	r.Use(chiMiddleware.Recoverer)
 
-	// Users
+	// 🔓 Открытые endpoints
 	r.Post("/auth/register", userHandler.Register)
-	r.Get("/users", userHandler.GetAll)
-	r.Get("/users/{id}", userHandler.GetByID)
-
-	// Tours
+	r.Post("/auth/login", userHandler.Login)
 	r.Get("/tours", tourHandler.GetAll)
 	r.Get("/tours/{id}", tourHandler.GetByID)
-	r.Post("/tours", tourHandler.Create)
-	r.Put("/tours/{id}", tourHandler.Update)
-	r.Delete("/tours/{id}", tourHandler.Delete)
-
-	// Bookings
-	r.Post("/bookings", bookingHandler.Create)
-	r.Get("/bookings", bookingHandler.GetAll)
-	r.Get("/bookings/user/{id}", bookingHandler.GetByUserID)
-	r.Put("/bookings/{id}/status", bookingHandler.UpdateStatus)
-	r.Delete("/bookings/{id}", bookingHandler.Delete)
-
-	// Payments
-	r.Post("/payments", paymentHandler.Create)
-	r.Get("/payments/{id}", paymentHandler.GetByID)
-	r.Put("/payments/{id}/status", paymentHandler.UpdateStatus)
-
-	// Reviews
-	r.Post("/reviews", reviewHandler.Create)
-	r.Get("/reviews/tour/{id}", reviewHandler.GetByTourID)
-	r.Delete("/reviews/{id}", reviewHandler.Delete)
-
-	// Destinations
-	r.Post("/destinations", destinationHandler.Create)
+	r.Get("/tours/destination/{id}", tourHandler.GetByDestinationID)
 	r.Get("/destinations", destinationHandler.GetAll)
 	r.Get("/destinations/{id}", destinationHandler.GetByID)
-	r.Delete("/destinations/{id}", destinationHandler.Delete)
+
+	// 🔐 Защищённые endpoints
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.AuthMiddleware)
+
+		// Client и выше
+		r.Post("/bookings", bookingHandler.Create)
+		r.Get("/bookings/user/{id}", bookingHandler.GetByUserID)
+		r.Post("/reviews", reviewHandler.Create)
+		r.Post("/payments", paymentHandler.Create)
+
+		// Только manager и admin
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RoleMiddleware("manager", "admin"))
+			r.Get("/bookings", bookingHandler.GetAll)
+			r.Put("/bookings/{id}/status", bookingHandler.UpdateStatus)
+			r.Delete("/bookings/{id}", bookingHandler.Delete)
+			r.Post("/tours", tourHandler.Create)
+			r.Put("/tours/{id}", tourHandler.Update)
+			r.Delete("/tours/{id}", tourHandler.Delete)
+			r.Post("/destinations", destinationHandler.Create)
+			r.Delete("/destinations/{id}", destinationHandler.Delete)
+			r.Put("/payments/{id}/status", paymentHandler.UpdateStatus)
+			r.Get("/payments/{id}", paymentHandler.GetByID)
+			r.Get("/reviews/tour/{id}", reviewHandler.GetByTourID)
+			r.Delete("/reviews/{id}", reviewHandler.Delete)
+		})
+
+		// Только admin
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.RoleMiddleware("admin"))
+			r.Get("/users", userHandler.GetAll)
+			r.Get("/users/{id}", userHandler.GetByID)
+		})
+	})
 
 	return r
 }

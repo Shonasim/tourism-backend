@@ -35,6 +35,21 @@ func (s *UserService) Register(name, email, password string) (*domain.User, erro
 	return user, nil
 }
 
+func (s *UserService) Login(email, password string) (*domain.User, error) {
+	user, err := s.repo.GetByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+
+	if user.PasswordHash != password {
+		return nil, errors.New("invalid password")
+	}
+	return user, nil
+}
+
 func (s *UserService) GetByID(id int) (*domain.User, error) {
 	user, err := s.repo.GetByID(id)
 	if err != nil {

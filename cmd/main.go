@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"tourism-backend/config"
 	"tourism-backend/internal/handler"
+	middleware "tourism-backend/internal/middlewares"
 	"tourism-backend/internal/repository/postgres"
 	"tourism-backend/internal/service"
 	"tourism-backend/storage"
@@ -15,6 +16,7 @@ func main() {
 	// 1. Загружаем конфиг
 	cfg := config.Load()
 
+	middleware.InitSecret(cfg.JWTSecret)
 	// 2. Подключаемся к БД
 	db, err := storage.NewPostgresDB(cfg)
 	if err != nil {

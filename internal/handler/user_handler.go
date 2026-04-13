@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	middleware "tourism-backend/internal/middlewares"
 	"tourism-backend/internal/service"
 
 	"github.com/go-chi/chi/v5"
@@ -23,19 +24,44 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		respondError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+	user, err := h.service.Register(req.Name, req.Email, req.Password)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	respondJSON(w, http.StatusCreated, user)
+}
+
+func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respondError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	user, err := h.service.Register(req.Name, req.Email, req.Password)
+	user, err := h.service.Login(req.Email, req.Password)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, err.Error())
+		respondError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
 
-	respondJSON(w, http.StatusCreated, user)
+	token, err := middleware.GenerateToken(user.ID, user.Email, string(user.Role))
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, "failed to generate token")
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]string{
+		"token": token,
+	})
 }
 
 func (h *UserHandler) GetAll(w http.ResponseWriter, r *http.Request) {

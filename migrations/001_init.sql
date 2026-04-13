@@ -49,3 +49,6 @@ CREATE TABLE IF NOT EXISTS reviews (
     comment    TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
  );
+
+INSERT INTO users (name, email, password, role)
+VALUES ('Администратор', 'admin@tourism.tj', 'admin123', 'admin');
